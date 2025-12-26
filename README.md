@@ -7,7 +7,7 @@
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Mac%20%7C%20Linux-lightgrey.svg)]()
 
-![Screenshot](docs/screenshot.png)
+![Screenshot](https://github.com/BmintBe/Gazdalkodj_okosabban/tree/main/Screenshot)
 
 ---
 
@@ -15,7 +15,7 @@
 
 
 **Cél:** Segítség a pénztárt kezelő játékosnak!
-
+**Használat:** GO.exe futtatása, automatikussan megnyitja a böngészőt ha ne akkor a taskbar-ban megjelenik egy ikon ott tudod elindítani illetve leállítani programot
 ---
 
 ## ✨ Funkciók
