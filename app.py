@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Gazdálkodj Okosan - Pénzügyi Oktató Játék
-Flask Webalkalmazás
+Gazdálkodj Okosan - alap
+
 """
 
 from flask import Flask, render_template, jsonify, request
