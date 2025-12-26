@@ -14,7 +14,7 @@
 ## 📖 Leírás
 
 
-- **Cél:** Segítség a pénztárt kezelő játékosnak!
+- **Cél:** Segítség a pénztárat kezelő játékosnak!
 
 - **Használat:** GO.exe futtatása, automatikussan megnyitja a böngészőt ha ne akkor a taskbar-ban megjelenik egy ikon ott tudod elindítani illetve leállítani programot
 ---
@@ -149,15 +149,12 @@ gazdalkodj-okosan/
 ├── tray_app.py              # System tray entry point
 ├── app.py                   # Flask backend
 ├── requirements.txt         # Python dependencies
-├── build_exe.bat           # EXE builder script
-├── gazdalkod_okosan.spec   # PyInstaller config
 ├── templates/
 │   └── banking_dashboard.html
 ├── static/
 │   ├── style-banking-green.css
 │   ├── script-banking.js
 │   └── favicon.svg
-├── docs/                    # Dokumentáció
 └── README.md
 ```
 
@@ -262,43 +259,12 @@ http://localhost:5000
 
 ---
 
-## 📄 Licensz
-
-MIT License - lásd [LICENSE](LICENSE) fájl
-
-**Használat:** Szabad  
-**Módosítás:** Engedélyezett  
-**Kereskedelmi:** Engedélyezett  
-**Felelősség:** Nincs garancia  
-
----
-
-## 🤝 Közreműködés
-
-Pull request-ek üdvözöltek! Nagyobb változtatásokhoz kérlek nyiss előbb egy issue-t.
-
-1. Fork-old a projektet
-2. Készíts feature branch-et (`git checkout -b feature/amazing-feature`)
-3. Commit-old a változásokat (`git commit -m 'Add amazing feature'`)
-4. Push-old a branch-et (`git push origin feature/amazing-feature`)
-5. Nyiss Pull Request-et
-
----
-
 ## 📧 Kapcsolat
 
 **Projekt Link:** [https://github.com/your-username/gazdalkodj-okosan](https://github.com/your-username/gazdalkodj-okosan)
 
 ---
 
-## 🙏 Köszönetnyilvánítás
-
-- [Flask](https://flask.palletsprojects.com/) - Web framework
-- [pystray](https://github.com/moses-palmer/pystray) - System tray funkció
-- [Pillow](https://python-pillow.org/) - Képkezelés
-- [PyInstaller](https://www.pyinstaller.org/) - EXE packaging
-
----
 
 ## 📊 Statisztikák
 
