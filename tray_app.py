@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Gazdálkodj Okosan - Banking Játék
+Gazdálkodj Okosan - Autorun, Gyorsidító menu
+konzol kikapcsolva ---felesleges---
+
 System Tray Application
 """
 
