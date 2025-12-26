@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!-- Háttér -->
+  <rect width="32" height="32" rx="6" fill="#10b981"/>
+  
+  <!-- Bank épület egyszerűsítve -->
+  <rect x="8" y="12" width="16" height="12" fill="white" rx="1"/>
+  
+  <!-- Tető -->
+  <path d="M 6 12 L 16 6 L 26 12 Z" fill="#047857"/>
+  
+  <!-- Ft jel -->
+  <text x="16" y="20" font-family="Arial, sans-serif" font-size="8" font-weight="bold" fill="#10b981" text-anchor="middle">Ft</text>
+</svg>

@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gazdálkodj Okosan - Banking Játék</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style-banking-green.css') }}">
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo sidebar-logo-text">
+                <div class="logo-icon">🏦</div>
+                <span class="logo-text">GAZDÁLKODJ OKOSAN</span>
+            </div>
+            <button class="sidebar-toggle" onclick="toggleSidebar()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+
+        <nav class="sidebar-nav">
+            <button class="nav-item active" onclick="setView('overview')">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                </svg>
+                <span>Áttekintés</span>
+            </button>
+            <button class="nav-item" onclick="setView('accounts')">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="1" x2="12" y2="23"></line>
+                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                </svg>
+                <span>Számlák</span>
+            </button>
+            <button class="nav-item" onclick="setView('property')">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                </svg>
+                <span>Ingatlan</span>
+            </button>
+            <button class="nav-item" onclick="setView('vehicle')">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 19V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h2"></path>
+                    <circle cx="7" cy="19" r="2"></circle>
+                    <path d="M9 19h5"></path>
+                    <circle cx="16" cy="19" r="2"></circle>
+                </svg>
+                <span>Jármű</span>
+            </button>
+            <button class="nav-item" onclick="setView('insurance')">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                </svg>
+                <span>Biztosítás</span>
+            </button>
+            <button class="nav-item" onclick="setView('history')">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+                <span>Előzmények</span>
+            </button>
+        </nav>
+
+        <div class="sidebar-players" id="sidebarPlayers">
+            <div class="players-title">JÁTÉKOSOK</div>
+            <div id="playersList"></div>
+            <button class="nav-item" onclick="showAddPlayerModal()" style="margin-top: 12px; background: rgba(255,255,255,0.1); justify-content: center;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                <span>Új Játékos</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <div class="top-bar-title">
+                <h1>Gazdálkodj Okosan</h1>
+                <p>Pénzügyi Oktató Játék</p>
+            </div>
+            <div class="top-bar-actions">
+                <button onclick="showAddPlayerModal()" 
+                        style="padding: 8px 16px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s;"
+                        onmouseover="this.style.boxShadow='0 4px 12px rgba(16,185,129,0.3)'"
+                        onmouseout="this.style.boxShadow='none'">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="8.5" cy="7" r="4"></circle>
+                        <line x1="20" y1="8" x2="20" y2="14"></line>
+                        <line x1="23" y1="11" x2="17" y2="11"></line>
+                    </svg>
+                    Új Játékos
+                </button>
+                <button onclick="resetGame()" 
+                        style="padding: 8px 16px; background: #ef4444; color: white; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s;"
+                        onmouseover="this.style.boxShadow='0 4px 12px rgba(239,68,68,0.3)'"
+                        onmouseout="this.style.boxShadow='none'"
+                        title="Minden adat törlése és új játék indítása">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="1 4 1 10 7 10"></polyline>
+                        <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                    </svg>
+                    Új Játék
+                </button>
+                <div class="currency-selector">
+                    <button class="currency-btn active" id="currencyHUF" onclick="setCurrency('HUF')">HUF</button>
+                    <button class="currency-btn" id="currencyEUR" onclick="setCurrency('EUR')">EUR</button>
+                </div>
+                <button class="notification-btn" id="notificationBtn" style="display: none;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    <span class="notification-badge" id="notificationBadge">0</span>
+                </button>
+                <div class="user-info" id="userInfo" style="display: none;">
+                    <div class="user-details">
+                        <div class="user-name" id="userName"></div>
+                        <div class="user-balance" id="userBalance"></div>
+                    </div>
+                    <div class="user-avatar" id="userAvatar"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content Area -->
+        <div class="content-area" id="contentArea">
+            <!-- Welcome Screen -->
+            <div class="welcome-screen" id="welcomeScreen">
+                <div class="welcome-icon">🏦</div>
+                <h2>Üdvözöljük a Banking Játékban!</h2>
+                <p>Kezdjük egy új játékos hozzáadásával</p>
+                <div class="add-player-form">
+                    <input type="text" id="newPlayerName" placeholder="Játékos neve" onkeypress="if(event.key==='Enter') addPlayer()">
+                    <button class="btn-add-player" onclick="addPlayer()">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        Hozzáad
+                    </button>
+                </div>
+                <p class="start-info">Kezdő összeg: <span id="startInfo"></span></p>
+            </div>
+
+            <!-- Main Views Container -->
+            <div id="mainViews" class="hidden">
+                <!-- Notifications -->
+                <div class="notifications" id="notifications"></div>
+
+                <!-- Overview View -->
+                <div id="viewOverview"></div>
+
+                <!-- Accounts View -->
+                <div id="viewAccounts" class="hidden"></div>
+
+                <!-- Property View -->
+                <div id="viewProperty" class="hidden"></div>
+
+                <!-- Vehicle View -->
+                <div id="viewVehicle" class="hidden"></div>
+
+                <!-- Insurance View -->
+                <div id="viewInsurance" class="hidden"></div>
+
+                <!-- History View -->
+                <div id="viewHistory" class="hidden"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Player Modal -->
+    <div id="addPlayerModal" onclick="if(event.target.id==='addPlayerModal') closeAddPlayerModal()" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 1000; display: none;">
+        <div style="background: white; border-radius: 16px; padding: 32px; max-width: 420px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+            <h3 style="font-size: 24px; font-weight: 700; color: #111827; margin-bottom: 16px;">Új Játékos Hozzáadása</h3>
+            <p style="color: #6b7280; margin-bottom: 16px; font-size: 14px;">Add meg az új játékos nevét és válassz bábut</p>
+            
+            <input type="text" id="modalPlayerName" placeholder="Játékos neve" 
+                   style="width: 100%; padding: 12px 16px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 15px; margin-bottom: 16px;"
+                   onkeypress="if(event.key==='Enter') addPlayerFromModal()">
+            
+            <div style="margin-bottom: 24px;">
+                <div style="font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 12px;">Válassz bábut:</div>
+                <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px;">
+                    <button onclick="selectAvatar('white')" id="avatar-white" class="avatar-btn" 
+                            style="width: 50px; height: 50px; border-radius: 50%; border: 3px solid #d1d5db; background: #ffffff; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; font-size: 24px;">
+                        ⚪
+                    </button>
+                    <button onclick="selectAvatar('black')" id="avatar-black" class="avatar-btn"
+                            style="width: 50px; height: 50px; border-radius: 50%; border: 3px solid #d1d5db; background: #1f2937; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; font-size: 24px;">
+                        ⚫
+                    </button>
+                    <button onclick="selectAvatar('red')" id="avatar-red" class="avatar-btn"
+                            style="width: 50px; height: 50px; border-radius: 50%; border: 3px solid #d1d5db; background: #ef4444; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; font-size: 24px;">
+                        🔴
+                    </button>
+                    <button onclick="selectAvatar('blue')" id="avatar-blue" class="avatar-btn"
+                            style="width: 50px; height: 50px; border-radius: 50%; border: 3px solid #d1d5db; background: #3b82f6; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; font-size: 24px;">
+                        🔵
+                    </button>
+                    <button onclick="selectAvatar('green')" id="avatar-green" class="avatar-btn"
+                            style="width: 50px; height: 50px; border-radius: 50%; border: 3px solid #d1d5db; background: #10b981; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; font-size: 24px;">
+                        🟢
+                    </button>
+                    <button onclick="selectAvatar('yellow')" id="avatar-yellow" class="avatar-btn"
+                            style="width: 50px; height: 50px; border-radius: 50%; border: 3px solid #d1d5db; background: #fbbf24; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; font-size: 24px;">
+                        🟡
+                    </button>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 12px;">
+                <button onclick="closeAddPlayerModal()" 
+                        style="flex: 1; padding: 12px; background: #f3f4f6; color: #374151; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                    Mégse
+                </button>
+                <button onclick="addPlayerFromModal()" 
+                        style="flex: 1; padding: 12px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                    Hozzáad
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script-banking.js') }}"></script>
+</body>
+</html>
