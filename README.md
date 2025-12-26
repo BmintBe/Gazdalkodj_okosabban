@@ -16,7 +16,7 @@
 
 - **Cél:** Segítség a pénztárat kezelő játékosnak!
 
-- **Használat:** GO.exe futtatása, automatikussan megnyitja a böngészőt ha ne akkor a taskbar-ban megjelenik egy ikon ott tudod elindítani illetve leállítani programot
+- **Használat:** GO.exe futtatása, automatikussan megnyitja a böngészőt ha nem akkor a taskbar-ban megjelenik egy ikon ott tudod elindítani illetve leállítani programot
 ---
 
 ## ✨ Funkciók
