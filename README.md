@@ -259,12 +259,6 @@ http://localhost:5000
 
 ---
 
-## 📧 Kapcsolat
-
-**Projekt Link:** [https://github.com/your-username/gazdalkodj-okosan](https://github.com/your-username/gazdalkodj-okosan)
-
----
-
 
 ## 📊 Statisztikák
 
@@ -278,11 +272,7 @@ http://localhost:5000
 
 - [ ] Felhasználóknak saját felület ami tudják követni a bankszámlájukat
 - [ ] Mobil app verzió
-- [ ] Online multiplayer (WebSocket)
 - [ ] Több nyelv támogatás
-- [ ] Játékstatisztikák
-- [ ] Teljesítmény rangsor
-- [ ] Tutorial mód
 
 ---
 
