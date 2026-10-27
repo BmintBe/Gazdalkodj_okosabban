@@ -16,14 +16,14 @@ import pystray
 from pystray import MenuItem as item
 
 # Flask app import
-from app import app
+from app import app, get_local_ip, PORT
 
 class BankingTrayApp:
     def __init__(self):
         self.flask_thread = None
         self.icon = None
         self.running = False
-        self.server_url = "http://localhost:5000"
+        self.server_url = f"http://localhost:{PORT}"
         
     def create_icon(self):
         """Ikon létrehozása (zöld háttér fehér Ft jellel)"""
@@ -71,7 +71,7 @@ class BankingTrayApp:
         """Flask szerver indítása külön szálon"""
         try:
             print("🚀 Flask szerver indítása...")
-            app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False)
+            app.run(host='0.0.0.0', port=PORT, debug=False, use_reloader=False, threaded=True)
         except Exception as e:
             print(f"❌ Flask hiba: {e}")
     
@@ -79,6 +79,10 @@ class BankingTrayApp:
         """Böngésző megnyitása"""
         print("🌐 Böngésző megnyitása...")
         webbrowser.open(self.server_url)
+    
+    def open_qr_codes(self, icon=None, item=None):
+        """QR kódok oldal megnyitása"""
+        webbrowser.open(self.server_url + "/#qr")
     
     def quit_app(self, icon, item):
         """Kilépés"""
@@ -103,6 +107,10 @@ class BankingTrayApp:
             item(
                 '🔄 Újratöltés',
                 lambda icon, item: self.open_browser(icon, item)
+            ),
+            item(
+                '📱 QR kódok a telefonokhoz',
+                self.open_qr_codes
             ),
             pystray.Menu.SEPARATOR,
             item(
@@ -141,6 +149,7 @@ class BankingTrayApp:
         
         print("✅ Szerver elindult!")
         print(f"📍 Elérhető: {self.server_url}")
+        print(f"📱 Telefonokról: http://{get_local_ip()}:{PORT}  (QR kódok: tálca menü)")
         print()
         print("💡 HASZNÁLAT:")
         print("   • Tálca ikon → Jobb klikk → Menü")

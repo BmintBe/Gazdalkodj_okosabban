@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#059669">
+    <title>Saját egyenlegem - Gazdálkodj Okosan</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <style>
+        :root {
+            --green: #10b981; --green-dark: #059669; --green-deep: #047857;
+            --bg: #f0fdf4; --card: #ffffff; --text: #111827; --muted: #6b7280;
+            --line: #e5e7eb; --red: #ef4444;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg); color: var(--text);
+            padding: 0 0 32px; min-height: 100vh;
+        }
+        header {
+            background: linear-gradient(135deg, var(--green) 0%, var(--green-deep) 100%);
+            color: #fff; padding: 20px 16px 64px;
+        }
+        .head-row { display: flex; align-items: center; gap: 12px; }
+        .avatar {
+            width: 48px; height: 48px; border-radius: 50%;
+            border: 3px solid rgba(255,255,255,.85); flex-shrink: 0;
+        }
+        .name { font-size: 22px; font-weight: 700; }
+        .sub { font-size: 13px; opacity: .85; }
+        .live { margin-left: auto; font-size: 12px; display: flex; align-items: center; gap: 6px; opacity: .9; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: #a7f3d0; }
+        .dot.off { background: #fca5a5; }
+        main { padding: 0 16px; margin-top: -48px; max-width: 520px; margin-left: auto; margin-right: auto; }
+        .card {
+            background: var(--card); border-radius: 16px; padding: 16px;
+            box-shadow: 0 4px 16px rgba(4,120,87,.08); margin-bottom: 12px;
+        }
+        .total-label { font-size: 13px; color: var(--muted); }
+        .total { font-size: 32px; font-weight: 800; color: var(--green-deep); margin-top: 2px; }
+        .split { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; }
+        .split div { background: var(--bg); border-radius: 12px; padding: 10px 12px; }
+        .split .lbl { font-size: 12px; color: var(--muted); }
+        .split .val { font-size: 17px; font-weight: 700; margin-top: 2px; white-space: nowrap; }
+        h2 { font-size: 14px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 10px; }
+        .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+        .chip { padding: 6px 12px; border-radius: 999px; font-size: 14px; background: #f3f4f6; color: #9ca3af; }
+        .chip.on { background: #d1fae5; color: var(--green-deep); font-weight: 600; }
+        .loan { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 15px; }
+        .loan:last-child { border-bottom: none; }
+        .loan .amt { font-weight: 700; color: var(--red); }
+        .empty { color: var(--muted); font-size: 14px; }
+        .tx { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+        .tx:last-child { border-bottom: none; }
+        .tx .desc { font-size: 15px; }
+        .tx .time { font-size: 12px; color: var(--muted); }
+        .tx .amts { text-align: right; font-size: 14px; font-weight: 600; white-space: nowrap; }
+        .plus { color: var(--green-dark); } .minus { color: var(--red); }
+        .missing { text-align: center; padding: 80px 24px; }
+        .missing h1 { font-size: 22px; margin-bottom: 8px; }
+        .missing p { color: var(--muted); }
+        footer { text-align: center; font-size: 12px; color: var(--muted); margin-top: 8px; }
+    </style>
+</head>
+<body>
+{% if missing %}
+    <div class="missing">
+        <div style="font-size:48px">🔍</div>
+        <h1>Ez a QR kód már nem érvényes</h1>
+        <p>Valószínűleg új játék indult. Kérj új QR kódot a bankostól.</p>
+    </div>
+{% else %}
+    <header>
+        <div class="head-row">
+            <div class="avatar" id="avatar"></div>
+            <div>
+                <div class="name" id="name">Betöltés…</div>
+                <div class="sub">Saját egyenleg</div>
+            </div>
+            <div class="live"><span class="dot" id="dot"></span><span id="liveText">Élő</span></div>
+        </div>
+    </header>
+
+    <main>
+        <div class="card">
+            <div class="total-label">Összes vagyon</div>
+            <div class="total" id="total">–</div>
+            <div class="split">
+                <div><div class="lbl">💵 Készpénz</div><div class="val" id="cash">–</div></div>
+                <div><div class="lbl">💳 Folyószámla</div><div class="val" id="account">–</div></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Tulajdon</h2>
+            <div class="chips" id="assets"></div>
+        </div>
+
+        <div class="card">
+            <h2>Hitelek</h2>
+            <div id="loans"></div>
+        </div>
+
+        <div class="card">
+            <h2>Biztosítások</h2>
+            <div class="chips" id="insurances"></div>
+        </div>
+
+        <div class="card">
+            <h2>Utolsó tranzakciók</h2>
+            <div id="transactions"></div>
+        </div>
+
+        <footer id="updated"></footer>
+    </main>
+
+    <script>
+        const TOKEN = {{ token|tojson }};
+        const AVATAR_COLORS = {
+            white: '#ffffff', black: '#1f2937', red: '#ef4444',
+            blue: '#3b82f6', green: '#10b981', yellow: '#fbbf24'
+        };
+        let symbol = 'Ft';
+
+        function money(n) {
+            return Number(n || 0).toLocaleString('hu-HU') + ' ' + symbol;
+        }
+        function signed(n) {
+            if (!n) return '';
+            const cls = n > 0 ? 'plus' : 'minus';
+            return `<span class="${cls}">${n > 0 ? '+' : '−'}${money(Math.abs(n))}</span>`;
+        }
+        function esc(s) {
+            return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        }
+        function chip(label, on) {
+            return `<span class="chip ${on ? 'on' : ''}">${on ? '✓ ' : ''}${label}</span>`;
+        }
+
+        function render(data) {
+            const p = data.player;
+            symbol = data.symbol;
+            document.getElementById('name').textContent = p.name;
+            document.getElementById('avatar').style.background = AVATAR_COLORS[p.avatar] || AVATAR_COLORS.green;
+            document.getElementById('total').textContent = money(p.cash + p.account);
+            document.getElementById('cash').textContent = money(p.cash);
+            document.getElementById('account').textContent = money(p.account);
+
+            document.getElementById('assets').innerHTML =
+                chip('🏠 Lakás', p.hasApartment) +
+                chip('🚗 Autó', p.hasCar) +
+                chip('🛋️ Bútor', p.hasFurniture);
+
+            const ins = p.insurances || {};
+            document.getElementById('insurances').innerHTML =
+                chip('Gyermekjövő', ins.childFuture) +
+                chip('Nyugdíj', ins.pension) +
+                chip('Házőrző', ins.homeGuard) +
+                chip('Casco', ins.casco);
+
+            const loans = p.loans || {};
+            const loanRows = [];
+            if (loans.apartment && loans.apartment.active)
+                loanRows.push(`<div class="loan"><span>🏠 Lakáshitel hátralék</span><span class="amt">${money(loans.apartment.remaining)}</span></div>`);
+            if (loans.car && loans.car.active)
+                loanRows.push(`<div class="loan"><span>🚗 Autóhitel hátralék</span><span class="amt">${money(loans.car.remaining)}</span></div>`);
+            document.getElementById('loans').innerHTML =
+                loanRows.join('') || '<div class="empty">Nincs aktív hiteled.</div>';
+
+            document.getElementById('transactions').innerHTML = data.transactions.length
+                ? data.transactions.map(t => `
+                    <div class="tx">
+                        <div><div class="desc">${esc(t.description)}</div><div class="time">${esc(t.timestamp)}</div></div>
+                        <div class="amts">
+                            ${t.cashAmount ? '<div>💵 ' + signed(t.cashAmount) + '</div>' : ''}
+                            ${t.accountAmount ? '<div>💳 ' + signed(t.accountAmount) + '</div>' : ''}
+                        </div>
+                    </div>`).join('')
+                : '<div class="empty">Még nincs tranzakció.</div>';
+
+            document.getElementById('updated').textContent =
+                'Frissítve: ' + new Date().toLocaleTimeString('hu-HU');
+        }
+
+        function setLive(ok) {
+            document.getElementById('dot').classList.toggle('off', !ok);
+            document.getElementById('liveText').textContent = ok ? 'Élő' : 'Nincs kapcsolat';
+        }
+
+        async function refresh() {
+            try {
+                const res = await fetch('/api/jatekos/' + encodeURIComponent(TOKEN), { cache: 'no-store' });
+                if (res.status === 404) { location.reload(); return; }
+                if (!res.ok) throw new Error(res.status);
+                render(await res.json());
+                setLive(true);
+            } catch (e) {
+                setLive(false);
+            }
+        }
+
+        refresh();
+        setInterval(refresh, 3000);
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
+    </script>
+{% endif %}
+</body>
+</html>

@@ -5,15 +5,43 @@ Gazdálkodj Okosan - alap
 
 """
 
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request, send_file, abort
 from datetime import datetime
 import json
 import os
+import io
+import secrets
+import socket
+import qrcode
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'gazdalkodj-okosan-otp-2025'
+app.config['SECRET_KEY'] = 'gazdalkodj-okosan-2025'
+
+PORT = 5000
+
+# True: a bankos felület (főoldal + /api/...) csak a bankos gépéről érhető el.
+# A telefonok csak a saját QR-linkjüket nyithatják meg.
+# Ha más gépről is bankoskodni akartok, állítsd False-ra.
+BANK_LOCAL_ONLY = True
+
+
+def get_local_ip():
+    """A gép helyi hálózati IP címe (amit a telefon is elér)."""
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        # Nem küld adatot, csak kiválasztja a megfelelő hálózati kártyát
+        s.connect(("8.8.8.8", 80))
+        return s.getsockname()[0]
+    except Exception:
+        return "127.0.0.1"
+    finally:
+        s.close()
+
+
+def new_token():
+    return secrets.token_urlsafe(6)
 
 # Játék adatok
 class GameData:
@@ -74,6 +102,7 @@ class GameData:
         settings = self.settings[self.currency]
         player = {
             'id': self.next_id,
+            'token': new_token(),
             'name': name,
             'avatar': avatar,
             'cash': settings['start_cash'],
@@ -103,9 +132,14 @@ class GameData:
     def get_player(self, player_id):
         return next((p for p in self.players if p['id'] == player_id), None)
     
+    def get_player_by_token(self, token):
+        return next((p for p in self.players if p.get('token') == token), None)
+    
     def update_player(self, player_id, updates):
         player = self.get_player(player_id)
         if player:
+            # Az azonosító és a QR token nem írható felül
+            updates = {k: v for k, v in updates.items() if k not in ('id', 'token')}
             player.update(updates)
             return player
         return None
@@ -139,6 +173,7 @@ class GameData:
             for player in self.players:
                 player_elem = ET.SubElement(players_elem, 'player')
                 ET.SubElement(player_elem, 'id').text = str(player['id'])
+                ET.SubElement(player_elem, 'token').text = player.get('token') or new_token()
                 ET.SubElement(player_elem, 'name').text = player['name']
                 ET.SubElement(player_elem, 'avatar').text = player.get('avatar', 'green')
                 ET.SubElement(player_elem, 'cash').text = str(player['cash'])
@@ -203,6 +238,8 @@ class GameData:
                 for player_elem in players_elem.findall('player'):
                     player = {
                         'id': int(player_elem.find('id').text),
+                        # Régi mentésekben nincs token -> generálunk
+                        'token': (player_elem.findtext('token') or new_token()),
                         'name': player_elem.find('name').text,
                         'avatar': player_elem.find('avatar').text,
                         'cash': int(player_elem.find('cash').text),
@@ -254,6 +291,87 @@ class GameData:
 # Globális game adatok
 game = GameData()
 game.load_data()  # Adatok betöltése indításkor
+
+
+@app.before_request
+def restrict_bank_to_local():
+    """A bankos felületet csak a bankos gépéről lehessen használni."""
+    if not BANK_LOCAL_ONLY:
+        return
+    path = request.path
+    public = (path.startswith('/jatekos/') or path.startswith('/api/jatekos/')
+              or path.startswith('/static/'))
+    if public:
+        return
+    if request.remote_addr not in ('127.0.0.1', '::1'):
+        abort(403)
+
+
+# ---------- QR kódos játékos nézet ----------
+
+def player_url(player):
+    return f"http://{get_local_ip()}:{PORT}/jatekos/{player['token']}"
+
+
+@app.route('/qr-kodok')
+def qr_codes_page():
+    """Nyomtatható oldal az összes játékos QR kódjával (csak bankos gép)."""
+    ip = get_local_ip()
+    players = [{'name': p['name'], 'avatar': p.get('avatar', 'green'),
+                'token': p['token'], 'url': player_url(p)} for p in game.players]
+    return render_template('qr_codes.html', players=players, ip=ip,
+                           no_network=(ip == '127.0.0.1'))
+
+
+@app.route('/api/qr-codes')
+def qr_codes_data():
+    """A dashboard QR nézetének adatai (csak bankos gép)."""
+    ip = get_local_ip()
+    return jsonify({
+        'ip': ip,
+        'no_network': ip == '127.0.0.1',
+        'players': [{'name': p['name'], 'avatar': p.get('avatar', 'green'),
+                     'url': player_url(p), 'img': f"/qr/{p['token']}.png"}
+                    for p in game.players]
+    })
+
+
+@app.route('/qr/<token>.png')
+def qr_image(token):
+    """Egy játékos QR kódja PNG képként."""
+    player = game.get_player_by_token(token)
+    if not player:
+        abort(404)
+    img = qrcode.make(player_url(player), box_size=10, border=2)
+    buf = io.BytesIO()
+    img.save(buf, format='PNG')
+    buf.seek(0)
+    return send_file(buf, mimetype='image/png')
+
+
+@app.route('/jatekos/<token>')
+def player_view(token):
+    """Telefonos, csak olvasható nézet egy játékosnak."""
+    if not game.get_player_by_token(token):
+        return render_template('player_view.html', token=token, missing=True), 404
+    return render_template('player_view.html', token=token, missing=False)
+
+
+@app.route('/api/jatekos/<token>')
+def player_view_data(token):
+    """A telefonos nézet adatai: csak az adott játékosé."""
+    player = game.get_player_by_token(token)
+    if not player:
+        return jsonify({'error': 'Játékos nem található'}), 404
+    settings = game.settings[game.currency]
+    safe = {k: v for k, v in player.items() if k != 'token'}
+    own_tx = [t for t in reversed(game.transactions) if t['playerName'] == player['name']][:15]
+    return jsonify({
+        'player': safe,
+        'currency': game.currency,
+        'symbol': settings['symbol'],
+        'transactions': own_tx
+    })
 
 
 @app.route('/')
@@ -386,4 +504,5 @@ def reset_game():
 
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    print(f"📱 Telefonos elérés: http://{get_local_ip()}:{PORT}")
+    app.run(debug=True, host='0.0.0.0', port=PORT)

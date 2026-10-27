@@ -6,6 +6,36 @@
     <title>Gazdálkodj Okosan - Banking Játék</title>
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='style-banking-green.css') }}">
+    <style>
+        /* QR nézet: body.qr-active osztállyal kapcsoljuk, így a meglévő nézetváltó kódot nem zavarja */
+        #viewQr { display: none; }
+        body.qr-active #welcomeScreen { display: none !important; }
+        body.qr-active #mainViews { display: block !important; }
+        body.qr-active #mainViews > [id^="view"]:not(#viewQr) { display: none !important; }
+        body.qr-active #viewQr { display: block; }
+
+        .qrv-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+        .qrv-head h2 { font-size: 24px; font-weight: 700; color: #111827; margin-bottom: 4px; }
+        .qrv-head p { color: #6b7280; font-size: 14px; max-width: 640px; }
+        .qrv-actions { display: flex; gap: 8px; }
+        .qrv-btn { padding: 8px 16px; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; color: #fff; background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+        .qrv-btn.secondary { background: #f3f4f6; color: #374151; }
+        .qrv-warn { background: #fef3c7; border: 1px solid #f59e0b; color: #92400e; padding: 12px 16px; border-radius: 10px; margin-bottom: 20px; font-size: 14px; }
+        .qrv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px; }
+        .qrv-card { background: #fff; border-radius: 16px; padding: 18px; text-align: center; box-shadow: 0 4px 16px rgba(4,120,87,.08); border-top: 6px solid var(--c, #10b981); page-break-inside: avoid; }
+        .qrv-card h3 { font-size: 18px; font-weight: 700; color: #111827; margin-bottom: 10px; }
+        .qrv-card img { width: 100%; max-width: 200px; aspect-ratio: 1; image-rendering: pixelated; }
+        .qrv-url { font-size: 11px; color: #6b7280; word-break: break-all; margin-top: 8px; }
+        .qrv-url a { color: inherit; }
+        .qrv-empty { text-align: center; padding: 60px 16px; color: #6b7280; background: #fff; border-radius: 16px; }
+
+        @media print {
+            body.qr-active .sidebar, body.qr-active .top-bar, body.qr-active .notifications,
+            body.qr-active .qrv-actions, body.qr-active .qrv-head p, body.qr-active .qrv-warn { display: none !important; }
+            body.qr-active .main-content { margin: 0 !important; padding: 0 !important; }
+            body.qr-active .qrv-card { box-shadow: none; border: 1px solid #d1d5db; border-top: 6px solid var(--c, #10b981); }
+        }
+    </style>
 </head>
 <body>
     <!-- Sidebar -->
@@ -66,6 +96,15 @@
                     <polyline points="12 6 12 12 16 14"></polyline>
                 </svg>
                 <span>Előzmények</span>
+            </button>
+            <button class="nav-item" id="navQr" onclick="showQrView()">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="3" width="7" height="7"></rect>
+                    <rect x="3" y="14" width="7" height="7"></rect>
+                    <path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M17 20h4v-3"></path>
+                </svg>
+                <span>QR kódok</span>
             </button>
         </nav>
 
@@ -177,6 +216,9 @@
 
                 <!-- History View -->
                 <div id="viewHistory" class="hidden"></div>
+
+                <!-- QR View -->
+                <div id="viewQr"></div>
             </div>
         </div>
     </div>
@@ -235,5 +277,80 @@
     </div>
 
     <script src="{{ url_for('static', filename='script-banking.js') }}"></script>
+    <script>
+        // ---------- QR kódok nézet ----------
+        const QR_AVATAR_COLORS = { white: '#d1d5db', black: '#1f2937', red: '#ef4444', blue: '#3b82f6', green: '#10b981', yellow: '#fbbf24' };
+
+        function qrEsc(s) {
+            return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        }
+
+        async function loadQrView() {
+            const box = document.getElementById('viewQr');
+            let data;
+            try {
+                const res = await fetch('/api/qr-codes', { cache: 'no-store' });
+                data = await res.json();
+            } catch (e) {
+                box.innerHTML = '<div class="qrv-empty">Nem sikerült betölteni a QR kódokat.</div>';
+                return;
+            }
+            const cards = data.players.map(p => `
+                <div class="qrv-card" style="--c: ${QR_AVATAR_COLORS[p.avatar] || '#10b981'}">
+                    <h3>${qrEsc(p.name)}</h3>
+                    <img src="${p.img}" alt="${qrEsc(p.name)} QR kódja">
+                    <div class="qrv-url"><a href="${qrEsc(p.url)}" target="_blank">${qrEsc(p.url)}</a></div>
+                </div>`).join('');
+            box.innerHTML = `
+                <div class="qrv-head">
+                    <div>
+                        <h2>Játékos QR kódok</h2>
+                        <p>Mindenki a saját kódját olvassa be a telefon kamerájával. A telefonnak ugyanazon a WiFi hálózaton kell lennie, mint ennek a gépnek (${qrEsc(data.ip)}).</p>
+                    </div>
+                    <div class="qrv-actions">
+                        <button class="qrv-btn secondary" onclick="loadQrView()">Frissítés</button>
+                        <button class="qrv-btn" onclick="window.print()">Nyomtatás</button>
+                    </div>
+                </div>
+                ${data.no_network ? '<div class="qrv-warn">⚠️ Nem találok hálózati kapcsolatot, ezért a telefonok nem fogják elérni a játékot. Csatlakoztasd a gépet a WiFi-hez, majd nyomd meg a Frissítés gombot.</div>' : ''}
+                ${data.players.length ? `<div class="qrv-grid">${cards}</div>`
+                    : '<div class="qrv-empty">Még nincs játékos. Adj hozzá játékosokat, és itt megjelennek a QR kódjaik.</div>'}`;
+        }
+
+        function showQrView() {
+            document.body.classList.add('qr-active');
+            document.querySelectorAll('.sidebar-nav .nav-item').forEach(b => b.classList.remove('active'));
+            document.getElementById('navQr').classList.add('active');
+            loadQrView();
+        }
+
+        function hideQrView() {
+            document.body.classList.remove('qr-active');
+            document.getElementById('navQr').classList.remove('active');
+        }
+
+        // A többi menüpont kiválasztásakor a QR nézet bezárul
+        if (typeof window.setView === 'function') {
+            const originalSetView = window.setView;
+            window.setView = function (...args) {
+                hideQrView();
+                return originalSetView.apply(this, args);
+            };
+        }
+        // Új játékos hozzáadásakor a QR nézet frissül
+        ['addPlayer', 'addPlayerFromModal'].forEach(name => {
+            const fn = window[name];
+            if (typeof fn === 'function') {
+                window[name] = async function (...args) {
+                    const result = await fn.apply(this, args);
+                    if (document.body.classList.contains('qr-active')) loadQrView();
+                    return result;
+                };
+            }
+        });
+
+        // A tálca menüből a #qr címmel nyílik
+        if (location.hash === '#qr') showQrView();
+    </script>
 </body>
 </html>
